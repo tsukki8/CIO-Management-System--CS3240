@@ -1,0 +1,169 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Logout confirmation page
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build logout page with danger-tinted styling"
+Notes: Danger-colored button for emphasis
+AI Use: Updated with GitHub Copilot Pro on 2026-04-12.
+        Prompt: "Align logout/auth pages to centralized blue palette and add subtle UI polish."
+Notes: Colors standardized and auth panel decorations tuned.
+{% endcomment %}
+{% load i18n %}
+
+{% block title %}Sign Out{% endblock %}
+
+{% block content %}
+    {% url 'account_logout' as default_logout_action %}
+    {% url 'profiles:profile' as default_cancel_url %}
+    <style>
+        .auth-shell {
+            width: min(920px, 100% - 2rem);
+            margin: 1.8rem auto;
+            min-height: min(680px, calc(100vh - 3.6rem));
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--auth-shell-border);
+            box-shadow: 0 14px 36px rgba(10, 34, 86, 0.14);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--auth-shell-bg);
+        }
+
+        .auth-left {
+            padding: 2.1rem 2.2rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            background: var(--auth-panel-bg);
+        }
+
+        .auth-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: #1e2a44;
+            font-weight: 700;
+            font-size: 1.32rem;
+            text-decoration: none;
+            margin-bottom: 3.3rem;
+        }
+
+        .auth-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--auth-logo-start) 0%, var(--auth-logo-end) 100%);
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+        }
+
+        .auth-title {
+            font-size: 2.1rem;
+            line-height: 1.08;
+            margin: 0;
+            color: #1c2539;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            margin: 0.95rem 0 1.4rem;
+            color: #5b6780;
+            max-width: 460px;
+        }
+
+        .auth-actions {
+            display: flex;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .auth-btn {
+            border: 0;
+            border-radius: 10px;
+            font-weight: 700;
+            padding: 0.78rem 1.05rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .auth-btn-danger {
+            background: linear-gradient(135deg, #cf3b3b, #b62f2f);
+            color: #fff;
+        }
+
+        .auth-btn-secondary {
+            background: #fff;
+            color: #233355;
+            border: 1px solid var(--primary-border-strong);
+        }
+
+        .auth-right {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(243, 170, 224, 0.7) 0, rgba(243, 170, 224, 0) 38%),
+                radial-gradient(circle at 78% 84%, rgba(246, 190, 235, 0.6) 0, rgba(246, 190, 235, 0) 42%),
+                var(--auth-hero-grad);
+        }
+
+        .auth-right::before,
+        .auth-right::after {
+            content: "";
+            position: absolute;
+            border-radius: 45% 55% 67% 33% / 41% 41% 59% 59%;
+            opacity: 0.74;
+        }
+
+        .auth-right::before {
+            width: 360px;
+            height: 360px;
+            top: -80px;
+            left: -65px;
+            background: rgba(204, 231, 255, 0.45);
+        }
+
+        .auth-right::after {
+            width: 410px;
+            height: 410px;
+            right: -125px;
+            bottom: -120px;
+            background: rgba(115, 157, 235, 0.48);
+        }
+
+        @media (max-width: 980px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-right {
+                min-height: 220px;
+            }
+        }
+    </style>
+
+    <div class="auth-shell">
+        <section class="auth-left">
+            <a class="auth-brand" href="{% url 'profiles:profile' %}">
+                <span class="auth-logo"></span>
+                CIO Hub
+            </a>
+
+            <h1 class="auth-title">Sign Out</h1>
+            <p class="auth-subtitle">Are you sure you want to sign out of your account?</p>
+
+            <form method="post" action="{{ logout_action|default:default_logout_action }}">
+                {% csrf_token %}
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                {% endif %}
+
+                <div class="auth-actions">
+                    <button class="auth-btn auth-btn-danger" type="submit">Yes, Sign Out</button>
+                    <a class="auth-btn auth-btn-secondary" href="{{ cancel_url|default:redirect_field_value|default:default_cancel_url }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+
+        <aside class="auth-right" aria-hidden="true"></aside>
+    </div>
+{% endblock %}

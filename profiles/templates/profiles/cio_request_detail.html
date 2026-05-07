@@ -1,0 +1,51 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}CIO Request Detail{% endblock %}
+
+{% block content %}
+<div class="container-narrow">
+  <section class="card">
+    <div class="header">
+      <div>
+        <h1>CIO Application</h1>
+        <p class="subtitle">Review the complete application text before approving or rejecting.</p>
+      </div>
+      <span class="badge">{{ cio_request.status|title }}</span>
+    </div>
+
+    <div class="meta-grid" style="margin-top:0;">
+      <div class="meta-item">
+        <div class="meta-label">User</div>
+        <div class="meta-value">{{ cio_request.user.get_full_name|default:cio_request.user.username }}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Email</div>
+        <div class="meta-value">{{ cio_request.user.email|default:"-" }}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Requested</div>
+        <div class="meta-value">{{ cio_request.created_at|date:"M d, Y g:i A" }}</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:1rem;">
+      <label>Full Application</label>
+      <div class="empty" style="white-space:pre-wrap; line-height:1.5; min-height:140px;">{{ cio_request.application_text|default:"No application text provided." }}</div>
+    </div>
+
+    <div class="btn-row" style="justify-content:space-between;">
+      <a class="btn btn-secondary" href="{% url 'profiles:user_admin_dashboard' %}">Back to Admin Dashboard</a>
+      <div class="btn-row" style="margin-top:0;">
+        <form method="post" action="{% url 'profiles:approve_cio_request' cio_request.id %}" style="margin:0;">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit">Approve</button>
+        </form>
+        <form method="post" action="{% url 'profiles:reject_cio_request' cio_request.id %}" style="margin:0;">
+          {% csrf_token %}
+          <button class="btn btn-danger" type="submit">Reject</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

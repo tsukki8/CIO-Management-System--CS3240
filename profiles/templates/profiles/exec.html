@@ -1,0 +1,289 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Executive dashboard
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build executive dashboard with CIO selection, join requests, roster, and quick actions"
+
+AI Citation
+Description: Event validation, roster engagement status, CIO calendar access, event promotion controls, Account management, Notifications badge, button consistency
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Add event datetime min constraints, show roster engagement status (Active/Inactive) based on 30-day RSVP window, add CIO Calendar quick-action link, add Notifications quick-action card with red unread count badge, convert CIO organization table action links to styled button groups, replace Session card with Account card containing Edit Profile and Swap to Member Dashboard actions, remove Messages button from CIO table actions, change Enter button from primary to secondary for consistency"
+    Notes: Roster displays engagement_status badge and last_rsvp timestamp; CIO Calendar aggregates all owned CIO events; Notifications card shows unread count; Action buttons grouped with flex layout; Account card styled as action subcards.
+Notes: CIO summary, org list, pending requests, roster table, action shortcuts
+{% endcomment %}
+
+{% block title %}Executive Dashboard{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <main class="col-main">
+                <section class="card">
+                    <div class="header">
+                        <div>
+                            <h1>Executive Dashboard</h1>
+                            <p class="subtitle">Welcome, {{ user.get_full_name|default:user.username }}.</p>
+                        </div>
+                        <span class="badge">Executive/Officer</span>
+                    </div>
+
+                    {% if cio %}
+                        <div class="cio-header-with-img">
+                            {% if cio.profile_picture and cio.profile_picture.name %}
+                                <img src="{{ cio.image_url }}" alt="{{ cio.name }}" class="avatar">
+                            {% else %}
+                                <div class="avatar-placeholder">🏢</div>
+                            {% endif %}
+                            <div class="cio-header-text">
+                                <h2>{{ cio.name }}</h2>
+                                <p class="subtitle">{{ cio.description|default:"No CIO description provided yet." }}</p>
+                            </div>
+                        </div>
+
+                        <div class="meta-grid">
+                            <div class="meta-item">
+                                <div class="meta-label">Status</div>
+                                <div class="meta-value">
+                                    <span class="badge {% if cio.status == 'public' %}status-public{% endif %}">
+                                        {{ cio.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label">Created On</div>
+                                <div class="meta-value">{{ cio.created_at|date:"M d, Y" }}</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label">Executive Owner</div>
+                                <div class="meta-value">{{ cio.created_by.get_full_name|default:cio.created_by.username }}</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="empty">
+                            No CIO record is linked to your account yet. Create one to activate your dashboard.
+                        </div>
+                    {% endif %}
+
+                    <div class="btn-row">
+                        {% if cio %}
+                            <a class="btn btn-primary" href="{% url 'profiles:cio_settings' cio.id %}">CIO Settings</a>
+                        {% else %}
+                            <a class="btn btn-primary" href="{% url 'profiles:cio_settings_redirect' %}">CIO Settings</a>
+                        {% endif %}
+                        <a class="btn btn-secondary" href="{% url 'profiles:inbox' %}?dashboard=exec">Messages</a>
+                        <a class="btn btn-secondary" href="{% url 'profiles:create_cio' %}">Create New CIO</a>
+                        <a class="btn btn-secondary" href="{% url 'profiles:profile' %}">Back to Profile</a>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h3>Your CIO Organizations</h3>
+                    <p class="subtitle">Select a CIO to view its roster and details.</p>
+
+                    {% if cios %}
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in cios %}
+                                        <tr>
+                                            <td>
+                                                <div class="cio-org-row">
+                                                    {% if item.profile_picture and item.profile_picture.name %}
+                                                        <img src="{{ item.image_url }}" alt="{{ item.name }}" class="avatar" style="width: 48px; height: 48px;">
+                                                    {% else %}
+                                                        <div class="avatar-placeholder" style="width: 48px; height: 48px; font-size: 1.2rem;">🏢</div>
+                                                    {% endif %}
+                                                    <span>{{ item.name }}</span>
+                                                </div>
+                                            </td>
+                                            <td>{{ item.get_status_display }}</td>
+                                            <td>{{ item.created_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <div style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                                                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}?cio={{ item.id }}">View</a>
+                                                    <a class="btn btn-secondary" href="{% url 'profiles:cio_settings' item.id %}">Settings</a>
+                                                    <a class="btn btn-secondary" href="{% url 'profiles:cio_detail' item.id %}?dashboard=exec&source=cio">Enter</a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty">You have not created any CIOs yet.</div>
+                    {% endif %}
+                </section>
+
+                <section class="card">
+                    <h3>Join Requests</h3>
+                    <p class="subtitle">Pending membership requests waiting for executive review.</p>
+
+                    {% if memberships %}
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>CIO</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for m in memberships %}
+                                        <tr>
+                                            <td>{{ m.user.get_full_name|default:m.user.username }}</td>
+                                            <td>{{ m.cio.name }}</td>
+                                            <td>
+                                                <div style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                                                    <form method="post" action="{% url 'profiles:approve_membership' m.id %}" style="margin:0;">
+                                                        {% csrf_token %}
+                                                        <button class="btn btn-primary" type="submit">Approve</button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'profiles:reject_membership' m.id %}" style="margin:0;">
+                                                        {% csrf_token %}
+                                                        <button class="btn btn-danger" type="submit">Reject</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty">No pending requests right now.</div>
+                    {% endif %}
+                </section>
+
+                <section class="card">
+                    <h3>Roster Management</h3>
+                    <p class="subtitle">Members associated with the selected CIO. Active means RSVP activity within {{ active_cutoff_days }} days.</p>
+
+                    {% if roster %}
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Last RSVP</th>
+                                        <th>Join Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member in roster %}
+                                        <tr>
+                                            <td>{{ member.user.get_full_name|default:member.user.username }}</td>
+                                            <td>{{ member.user.email|default:"-" }}</td>
+                                            <td>{{ member.get_role_display|default:member.role|default:"-" }}</td>
+                                            <td>
+                                                <span class="badge {% if member.engagement_status == 'Active' %}status-public{% endif %}">
+                                                    {{ member.engagement_status|default:"Inactive" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if member.last_rsvp %}
+                                                    {{ member.last_rsvp|date:"M d, Y • g:i A" }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ member.user.date_joined|date:"M d, Y" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty">No roster members found for this CIO yet.</div>
+                    {% endif %}
+                </section>
+            </main>
+
+            <aside class="col-side">
+                <section class="card">
+                    <h3>Quick Actions</h3>
+                    <p class="subtitle">Module shortcuts for your executive tools.</p>
+
+                    <div class="action-grid">
+                        <a class="action-link" href="{% url 'profiles:inbox' %}?dashboard=exec" aria-label="Open Messages">
+                            <div class="action-title">Messages</div>
+                            <div class="action-sub">Open the merged chat screen and reply to members.</div>
+                        </a>
+
+                        <a class="action-link" href="{% url 'profiles:notifications' %}?dashboard=exec" aria-label="Open Notifications">
+                            <div class="action-title">
+                                Notifications
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="notification-count-badge">{{ unread_notifications_count }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="action-sub">Review unread alerts and event reminders.</div>
+                        </a>
+
+                        {% if cio %}
+                            <a class="action-link" href="{% url 'profiles:cio_settings' cio.id %}" aria-label="Open CIO Settings">
+                                <div class="action-title">CIO Settings</div>
+                                <div class="action-sub">Update CIO details, status, and profile picture.</div>
+                            </a>
+                        {% else %}
+                            <a class="action-link" href="{% url 'profiles:cio_settings_redirect' %}" aria-label="Open CIO Settings">
+                                <div class="action-title">CIO Settings</div>
+                                <div class="action-sub">Open your most recent CIO settings page.</div>
+                            </a>
+                        {% endif %}
+
+                        <a class="action-link" href="{% url 'profiles:calendar' %}?dashboard=exec" aria-label="Open My Calendar">
+                            <div class="action-title">My Calendar</div>
+                            <div class="action-sub">Review events you have RSVP’d to across organizations.</div>
+                        </a>
+
+                        <a class="action-link" href="{% url 'profiles:cio_calendar' %}?dashboard=exec" aria-label="Open CIO Calendar">
+                            <div class="action-title">CIO Calendar</div>
+                            <div class="action-sub">View all upcoming events across all your CIOs in one place.</div>
+                        </a>
+
+                        {% if cio %}
+                            <a class="action-link" href="{% url 'profiles:cio_detail' cio.id %}?dashboard=exec&source=cio" aria-label="Manage Events">
+                                <div class="action-title">Manage Events</div>
+                                <div class="action-sub">Create, edit, and publish upcoming events.</div>
+                            </a>
+                        {% else %}
+                            <a class="action-link" href="{% url 'profiles:create_cio' %}" aria-label="Create CIO to manage events">
+                                <div class="action-title">Manage Events</div>
+                                <div class="action-sub">Create a CIO first to start adding events.</div>
+                            </a>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h3>Account</h3>
+                    <p class="subtitle">Manage your profile and switch dashboards.</p>
+                    <div class="action-grid">
+                        <a class="action-link" href="{% url 'profiles:profile' %}" aria-label="Edit Profile">
+                            <div class="action-title">Edit Profile</div>
+                            <div class="action-sub">Update your picture and account details.</div>
+                        </a>
+                        <a class="action-link" href="{% url 'profiles:member' %}" aria-label="Swap to Member Dashboard">
+                            <div class="action-title">Swap to Member Dashboard</div>
+                            <div class="action-sub">Switch to member view and browse CIO listings.</div>
+                        </a>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: CIO detail page
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build CIO detail page with organization info, event list, and create button"
+Notes: Event list, create button restricted to CIO creators
+{% endcomment %}
+
+{% comment %}
+AI Citation
+Description: CIO detail page refinement
+AI Use: Modified with GitHub Copilot on 2026-04-12.
+        Prompt: "Restyle the CIO detail page to match the shared dashboard theme and keep CIO management actions visible only to CIO owners."
+Notes: Added card-based layout, event tables, and role-gated controls.
+{% endcomment %}
+
+{% comment %}
+AI Citation
+Description: CIO details and event management page with promotion controls and split event sections
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Split events into Upcoming and Past sections, add event promotion controls with quota display, add CIO Calendar link, fix back navigation for non-owner CIO users"
+Notes: Separate upcoming_events (ascending) and past_events (descending) tables; promotion buttons and quota display for CIO owners; role-aware back button routing; promotion status feedback alerts.
+{% endcomment %}
+
+{% block title %}{{ cio.name }} - CIO Details{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <section class="card">
+            <div class="header">
+                <div>
+                    <h1>{{ cio.name }}</h1>
+                    <p class="subtitle">{{ cio.description|default:"No description provided yet." }}</p>
+                </div>
+                <span class="badge {% if cio.status == 'public' %}status-public{% endif %}">{{ cio.get_status_display }}</span>
+            </div>
+
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Created On</div>
+                    <div class="meta-value">{{ cio.created_at|date:"M d, Y" }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Executive Owner</div>
+                    <div class="meta-value">{{ cio.created_by.get_full_name|default:cio.created_by.username }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Total Events</div>
+                    <div class="meta-value">{{ total_events }}</div>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                {% if can_manage_cio %}
+                    <a class="btn btn-primary" href="{% url 'profiles:create_event' cio.id %}?dashboard={{ dashboard_context }}">Create Event</a>
+                    <a class="btn btn-secondary" href="{% url 'profiles:cio_settings' cio.id %}">CIO Settings</a>
+                    <a class="btn btn-secondary" href="{% url 'profiles:cio_calendar' %}?dashboard={{ dashboard_context }}">Open CIO Calendar</a>
+                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}?cio={{ cio.id }}">Back to Executive Dashboard</a>
+                    {% if dashboard_context == "member" %}
+                        <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Back to Member Dashboard</a>
+                    {% endif %}
+                {% else %}
+                    {% if dashboard_context == "exec" %}
+                        <a class="btn btn-secondary" href="{% url 'profiles:exec' %}">Back to Executive Dashboard</a>
+                    {% else %}
+                        <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Back to Member Dashboard</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Upcoming Events</h3>
+            <p class="subtitle">Future activities for this CIO.</p>
+
+            {% if can_manage_cio %}
+                <p class="subtitle">Promotion quota: {{ promotions_left }} promotion slot(s) left in the current 7-day window.</p>
+                {% if promote_status == "limit" %}
+                    <div class="alert">Promotion limit reached for this CIO. Try again after the cooldown window.</div>
+                {% elif promote_status == "ok" %}
+                    <div class="alert" style="border-color:#b6e4c8;background:#ecfaf1;color:#166534;">Event promoted successfully.</div>
+                {% elif promote_status == "private" %}
+                    <div class="alert">Only public CIOs can promote events to the public feed.</div>
+                {% elif promote_status == "past" %}
+                    <div class="alert">Past events cannot be promoted.</div>
+                {% endif %}
+            {% endif %}
+
+            {% if upcoming_events %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                {% if can_manage_cio %}
+                                    <th>Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in upcoming_events %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'profiles:event_detail' cio.id event.id %}?dashboard={{ dashboard_context }}&source=cio">
+                                            <strong>{{ event.title }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ event.description|default:"-" }}</td>
+                                    <td>{{ event.date|date:"M d, Y • g:i A" }}</td>
+
+                                    {% if can_manage_cio %}
+                                        <td>
+                                            <a class="btn btn-secondary"
+                                               href="{% url 'profiles:edit_event' cio.id event.id %}?dashboard={{ dashboard_context }}">
+                                                Edit
+                                            </a>
+                                            <form method="post" action="{% url 'profiles:promote_event' cio.id event.id %}?dashboard={{ dashboard_context }}" style="display:inline-block; margin:0 0 0 0.35rem;">
+                                                {% csrf_token %}
+                                                <button class="btn btn-primary" type="submit" {% if not can_promote and not event.is_promoted %}disabled{% endif %}>
+                                                    {% if event.is_promoted %}Re-Promote{% else %}Promote{% endif %}
+                                                </button>
+                                            </form>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">
+                    No upcoming events scheduled.
+                    {% if can_manage_cio %} Use Create Event to add the first one.{% endif %}
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h3>Past Events</h3>
+            <p class="subtitle">Completed events are kept here for reference.</p>
+
+            {% if past_events %}
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                {% if can_manage_cio %}
+                                    <th>Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in past_events %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'profiles:event_detail' cio.id event.id %}?dashboard={{ dashboard_context }}&source=cio">
+                                            <strong>{{ event.title }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ event.description|default:"-" }}</td>
+                                    <td>{{ event.date|date:"M d, Y • g:i A" }}</td>
+
+                                    {% if can_manage_cio %}
+                                        <td>
+                                            <a class="btn btn-secondary"
+                                               href="{% url 'profiles:edit_event' cio.id event.id %}?dashboard={{ dashboard_context }}">
+                                                Edit
+                                            </a>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">No past events yet.</div>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}

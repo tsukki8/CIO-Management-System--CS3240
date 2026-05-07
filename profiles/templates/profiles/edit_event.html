@@ -1,0 +1,85 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Event creation form
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build event form with title, description, and datetime"
+Notes: Date/time input for event scheduling
+
+AI Citation
+Description: Event creation form with past-date validation
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Add datetime min constraint to prevent creating past events"
+Notes: Added min attribute to datetime-local input to restrict event dates to future times based on current local time.
+{% endcomment %}
+
+{% comment %}
+AI Citation
+Description: Event creation form refinement
+AI Use: Modified with GitHub Copilot on 2026-04-12.
+        Prompt: "Restyle the create event form so it matches the CIO dashboard theme and stays readable on the shared base layout."
+Notes: Kept the form structure intact while aligning styling with the rest of the site.
+{% endcomment %}
+
+{% block title %}Edit Event - {{ cio.name }}{% endblock %}
+
+{% block content %}
+<div class="container-narrow">
+    <section class="card">
+        <h1>Edit Event</h1>
+        <p class="subtitle">Update event for <strong>{{ cio.name }}</strong>.</p>
+
+        {% if error %}
+        <div class="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" action="{% url 'profiles:edit_event' cio_id=cio.id event_id=event.id %}">
+            {% csrf_token %}
+
+            <div class="field">
+                <label for="title">Event Title</label>
+                <input
+                        id="title"
+                        name="title"
+                        type="text"
+                        maxlength="255"
+                        value="{{ event.title }}"
+                        placeholder="e.g., Spring Kickoff Meeting"
+                        required
+                >
+            </div>
+
+            <div class="field">
+                <label for="host">Host</label>
+                <input id="host" name="host" type="text" value="{{ cio.name }}" readonly>
+            </div>
+
+            <div class="field">
+                <label for="description">Description</label>
+                <textarea
+                        id="description"
+                        name="description"
+                >{{ event.description }}</textarea>
+            </div>
+
+            <div class="field">
+                <label for="date">Event Date and Time</label>
+                <input
+                        id="date"
+                        name="date"
+                    type="datetime-local"
+                    value="{{ event.date|date:'Y-m-d\\TH:i' }}"
+                    min="{{ min_date_input }}"
+                        required
+                >
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" type="submit">Save Changes</button>
+                <a class="btn btn-secondary" href="{% url 'profiles:cio_detail' cio.id %}">Cancel</a>
+                <a class="btn btn-secondary" href="{% url 'profiles:exec' %}?cio={{ cio.id }}">Back to Executive Dashboard</a>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

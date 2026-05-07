@@ -1,0 +1,97 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Centralized CIO calendar for executives
+AI Use: Generated with GitHub Copilot on 2026-04-16.
+    Prompt: "Create a dedicated calendar page showing all upcoming events across multiple CIOs owned by an executive, grouped by date, with past events reference section"
+    Notes: Regroups events by calendar_day, separate upcoming and recent-past sections for easy review.
+{% endcomment %}
+
+{% block title %}CIO Calendar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="card">
+        <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h1>CIO Centralized Calendar</h1>
+                <p class="subtitle">All upcoming events across your CIO organizations.</p>
+            </div>
+            {% if dashboard_context == "member" %}
+                <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Back to Member Dashboard</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{% url 'profiles:exec' %}">Back to Executive Dashboard</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="card">
+        {% if upcoming_events %}
+            {% regroup upcoming_events by calendar_day as grouped_events %}
+
+            {% for group in grouped_events %}
+                <div style="margin-bottom: 1.25rem;">
+                    <h2 style="margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
+                        {{ group.grouper|date:"l, M d, Y" }}
+                    </h2>
+
+                    <div style="display:grid; gap:0.9rem;">
+                        {% for event in group.list %}
+                            <div class="card" style="margin:0; border:1px solid #e5e7eb; box-shadow:none;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                                    <div>
+                                        <div class="badge" style="margin-bottom:0.5rem;">{{ event.cio.name }}</div>
+                                        <h3 style="margin-bottom:0.35rem;">{{ event.title }}</h3>
+                                        <div class="subtitle" style="margin:0;">{{ event.date|date:"g:i A" }}</div>
+                                    </div>
+
+                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                        <a class="btn btn-secondary" href="{% url 'profiles:edit_event' event.cio.id event.id %}?dashboard={{ dashboard_context }}">Edit</a>
+                                        <a class="btn btn-primary" href="{% url 'profiles:event_detail' event.cio.id event.id %}?dashboard={{ dashboard_context }}&source=calendar">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">No upcoming events across your CIOs yet.</div>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <h3>Recent Past Events</h3>
+        <p class="subtitle">Reference history for recently completed events.</p>
+
+        {% if past_events %}
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>CIO</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in past_events %}
+                            <tr>
+                                <td>{{ event.title }}</td>
+                                <td>{{ event.cio.name }}</td>
+                                <td>{{ event.date|date:"M d, Y • g:i A" }}</td>
+                                <td>
+                                    <a class="btn btn-secondary" href="{% url 'profiles:event_detail' event.cio.id event.id %}?dashboard={{ dashboard_context }}&source=calendar">Open</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">No past events yet.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

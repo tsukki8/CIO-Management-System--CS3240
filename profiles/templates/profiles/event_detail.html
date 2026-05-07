@@ -1,0 +1,90 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Event detail page
+AI Use: Modified with GitHub Copilot on 2026-04-13.
+        Prompt: "hidden CIOs shouldn't have any of their events public but only to approved users"
+Notes: Event access and RSVP behavior were adjusted to respect hidden CIO visibility rules.
+{% endcomment %}
+
+{% comment %}
+AI Citation
+Description: Event details page with past-event RSVP blocking and promotion feedback
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Disable RSVP for past events and show explanatory message; add feedback for promotion status"
+Notes: Added is_past_event and rsvp_blocked context check; disabled RSVP button for past events with alert message; added promotion status feedback (limit/ok/private/past).
+{% endcomment %}
+
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container-narrow">
+
+    <section class="card">
+        <div class="header">
+            <div>
+                <h1>{{ event.title }}</h1>
+                <p class="subtitle">{{ event.date|date:"M d, Y • g:i A" }}</p>
+            </div>
+            <span class="badge">{{ event.cio.name }}</span>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <div class="meta-label">Hosted By</div>
+                <div class="meta-value">
+                    {{ event.cio.name }}
+                </div>
+            </div>
+
+            <div class="meta-item">
+                <div class="meta-label">Total Attendees</div>
+                <div class="meta-value">{{ event.attendees.count }}</div>
+            </div>
+        </div>
+
+        <div class="description">
+            {{ event.description|linebreaks }}
+        </div>
+
+        {% if is_past_event and rsvp_blocked %}
+            <div class="alert">RSVP is closed because this event has already started or passed.</div>
+        {% endif %}
+
+        <div class="btn-row">
+            <form method="post" action="{{ rsvp_action_url }}">
+                {% csrf_token %}
+                <button class="btn {% if is_attending %}btn-secondary{% else %}btn-primary{% endif %}" {% if is_past_event %}disabled{% endif %}>
+                    {% if is_past_event %}RSVP Closed{% elif is_attending %}Cancel RSVP{% else %}RSVP{% endif %}
+                </button>
+            </form>
+
+            {% if can_manage_event %}
+                <a class="btn btn-secondary" href="{% url 'profiles:edit_event' cio.id event.id %}?dashboard={{ dashboard_context }}">Edit Event</a>
+            {% endif %}
+
+            <a class="btn btn-secondary"
+               href="{{ back_url }}">
+                {{ back_label }}
+            </a>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>Attendees</h3>
+
+        {% if event.attendees.all %}
+        <ul class="attendee-list">
+            {% for user in event.attendees.all %}
+            <li>
+                {{ user.get_full_name|default:user.username }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No RSVPs yet.</p>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}

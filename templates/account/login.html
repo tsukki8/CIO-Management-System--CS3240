@@ -1,0 +1,471 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Styled login page
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Create modern split-screen login page with Google OAuth"
+AI Use: Modified 2026-04-27.
+    Prompt: "Remove success flash messages from login page"
+Notes: Split-screen design, success messages filtered
+AI Use: Updated with GitHub Copilot Pro on 2026-04-14.
+        Prompt: "Add subtle CSS-only animations to login page (no JavaScript); introduce sheen and hover lift; tune and centralize colors."
+Notes: Implemented entrance animations, persistent sheen, and replaced hardcoded blues with shared variables.
+{% endcomment %}
+{% load i18n %}
+{% load socialaccount %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+    <style>
+        .auth-shell {
+            width: min(980px, 100% - 2rem);
+            margin: 1.8rem auto;
+            min-height: min(760px, calc(100vh - 3.6rem));
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--auth-shell-border);
+            box-shadow: 0 14px 36px rgba(10, 34, 86, 0.14);
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            background: var(--auth-shell-bg);
+            animation: auth-pop 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+            transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .auth-shell::after {
+            content: "";
+            position: absolute;
+            inset: -25% -60%;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0) 60%);
+            transform: translateX(-34%);
+            animation: auth-shell-sheen 11s linear 1.2s infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-left,
+        .auth-right {
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-shell:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 42px rgba(10, 34, 86, 0.2);
+        }
+
+        .auth-left {
+            padding: 2.1rem 2.2rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            background: var(--auth-panel-bg);
+        }
+
+        .auth-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: #1e2a44;
+            font-weight: 700;
+            font-size: 1.32rem;
+            text-decoration: none;
+            margin-bottom: 3.3rem;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 80ms both;
+        }
+
+        .auth-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--auth-logo-start) 0%, var(--auth-logo-end) 100%);
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+            animation: auth-logo-pulse 4s ease-in-out infinite;
+        }
+
+        .auth-kicker {
+            color: #5f6c86;
+            margin-bottom: 0.6rem;
+            font-size: 0.97rem;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 160ms both;
+        }
+
+        .auth-title {
+            font-size: 2.15rem;
+            line-height: 1.08;
+            margin: 0;
+            color: #1c2539;
+            letter-spacing: -0.02em;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 240ms both;
+        }
+
+        .auth-subtitle {
+            margin: 0.9rem 0 1.3rem;
+            color: #5b6780;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 320ms both;
+        }
+
+        .auth-field {
+            margin-bottom: 0.92rem;
+        }
+
+        .auth-left form {
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 360ms both;
+        }
+
+        .auth-left form .auth-field {
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .auth-left form .auth-field:nth-of-type(1) {
+            animation-delay: 420ms;
+        }
+
+        .auth-left form .auth-field:nth-of-type(2) {
+            animation-delay: 500ms;
+        }
+
+        .auth-field label {
+            display: block;
+            margin-bottom: 0.36rem;
+            color: #32425f;
+            font-size: 0.86rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .auth-field input[type="text"],
+        .auth-field input[type="password"] {
+            width: 100%;
+            border: 1px solid var(--primary-border);
+            border-radius: 10px;
+            padding: 0.76rem 0.82rem;
+            font: inherit;
+            background: #fff;
+            transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        }
+
+        .auth-field input:focus {
+            outline: none;
+            border-color: var(--auth-focus-border);
+            box-shadow: 0 0 0 3px var(--primary-soft);
+            transform: translateY(-1px);
+        }
+
+        .auth-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            margin: 0.2rem 0 0.95rem;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 580ms both;
+        }
+
+        .auth-remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: #45526f;
+            font-size: 0.89rem;
+        }
+
+        .auth-link {
+            color: var(--primary-strong);
+            font-size: 0.89rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 160ms ease, opacity 160ms ease;
+        }
+
+        .auth-link:hover {
+            text-decoration: underline;
+            opacity: 0.9;
+        }
+
+        .auth-submit {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary-start), var(--primary));
+            color: #fff;
+            font-weight: 700;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            box-shadow: 0 10px 22px rgba(47, 108, 224, 0.18);
+            transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 660ms both;
+        }
+
+        .auth-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 26px rgba(47, 108, 224, 0.24);
+            filter: brightness(1.02);
+        }
+
+        .auth-divider {
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #7c8699;
+            font-size: 0.88rem;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 740ms both;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            height: 1px;
+            background: var(--auth-divider);
+            flex: 1;
+        }
+
+        .auth-social {
+            width: 100%;
+            border: 1px solid var(--primary-border-strong);
+            border-radius: 10px;
+            background: #fff;
+            color: #233355;
+            font-weight: 600;
+            padding: 0.74rem 0.9rem;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 820ms both;
+        }
+
+        .auth-social:hover {
+            background: var(--primary-surface);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(9, 24, 63, 0.08);
+        }
+
+        .auth-footer {
+            margin-top: auto;
+            color: #60708d;
+            font-size: 0.92rem;
+            animation: auth-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 900ms both;
+        }
+
+        .auth-right {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(243, 170, 224, 0.7) 0, rgba(243, 170, 224, 0) 38%),
+                radial-gradient(circle at 78% 84%, rgba(246, 190, 235, 0.6) 0, rgba(246, 190, 235, 0) 42%),
+                var(--auth-hero-grad);
+            background-size: 125% 125%, 120% 120%, 100% 100%;
+            animation: auth-gradient-drift 18s ease-in-out infinite alternate;
+        }
+
+        .auth-right::before,
+        .auth-right::after {
+            content: "";
+            position: absolute;
+            border-radius: 45% 55% 67% 33% / 41% 41% 59% 59%;
+            filter: blur(1px);
+            opacity: 0.84;
+            animation: auth-drift 12s ease-in-out infinite;
+        }
+
+        .auth-right::before {
+            width: 380px;
+            height: 380px;
+            top: -90px;
+            left: -75px;
+            background: rgba(204, 231, 255, 0.46);
+        }
+
+        .auth-right::after {
+            width: 420px;
+            height: 420px;
+            right: -135px;
+            bottom: -125px;
+            background: rgba(115, 157, 235, 0.52);
+            animation-direction: reverse;
+            animation-duration: 15s;
+        }
+
+        @keyframes auth-pop {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.985);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes auth-rise {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes auth-logo-pulse {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+            }
+
+            50% {
+                transform: scale(1.07);
+                box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+            }
+        }
+
+        @keyframes auth-shell-sheen {
+            0%,
+            35% {
+                transform: translateX(-36%);
+            }
+
+            55% {
+                transform: translateX(36%);
+            }
+
+            100% {
+                transform: translateX(36%);
+            }
+        }
+
+        @keyframes auth-drift {
+            0%,
+            100% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate3d(28px, 20px, 0) scale(1.05);
+            }
+        }
+
+        @keyframes auth-gradient-drift {
+            0% {
+                background-position: 16% 18%, 78% 84%, 0% 0%;
+            }
+
+            100% {
+                background-position: 24% 26%, 70% 76%, 0% 0%;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-right {
+                min-height: 220px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .auth-shell,
+            .auth-right,
+            .auth-brand,
+            .auth-logo,
+            .auth-kicker,
+            .auth-title,
+            .auth-subtitle,
+            .auth-left form,
+            .auth-left form .auth-field,
+            .auth-row,
+            .auth-submit,
+            .auth-divider,
+            .auth-social,
+            .auth-footer,
+            .auth-right::before,
+            .auth-right::after {
+                animation: none;
+            }
+
+            .auth-shell {
+                transition: box-shadow 180ms ease;
+            }
+
+            .auth-shell:hover {
+                transform: none;
+                box-shadow: 0 16px 32px rgba(10, 34, 86, 0.18);
+            }
+
+            .auth-shell::after {
+                animation: none;
+            }
+        }
+    </style>
+
+    <div class="auth-shell">
+        <section class="auth-left">
+            <a class="auth-brand" href="{% url 'profiles:profile' %}">
+                <span class="auth-logo"></span>
+                CIO Hub
+            </a>
+
+            <p class="auth-kicker">Start your journey</p>
+            <h1 class="auth-title">Sign In to CIO Hub</h1>
+            <p class="auth-subtitle">Access your executive and member dashboards securely.</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if "success" not in message.tags %}
+                        <div class="alert" style="border-color:#b6e4c8;background:#ecfaf1;color:#166534;">{{ message }}</div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <form method="post" action="{% url 'account_login' %}">
+                {% csrf_token %}
+
+                <div class="auth-field">
+                    <label for="id_login">Email or Username</label>
+                    <input id="id_login" type="text" name="login" value="{{ form.login.value|default:'' }}" required>
+                </div>
+
+                <div class="auth-field">
+                    <label for="id_password">Password</label>
+                    <input id="id_password" type="password" name="password" required>
+                </div>
+
+                <div class="auth-row">
+                    <label class="auth-remember" for="id_remember">
+                        <input id="id_remember" type="checkbox" name="remember">
+                        Remember me
+                    </label>
+                    <a class="auth-link" href="{% url 'account_reset_password' %}">Forgot password?</a>
+                </div>
+
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                {% endif %}
+
+                <button class="auth-submit" type="submit">Sign In</button>
+            </form>
+
+            <div class="auth-divider">or sign in with</div>
+            <a class="auth-social" href="{% provider_login_url 'google' process='login' %}">Continue with Google</a>
+
+            <p class="auth-footer">
+                New here?
+                <a class="auth-link" href="{% url 'account_signup' %}">Create an account</a>
+            </p>
+        </section>
+
+        <aside class="auth-right" aria-hidden="true"></aside>
+    </div>
+{% endblock %}

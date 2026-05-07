@@ -1,0 +1,39 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}CIO Application{% endblock %}
+
+{% block content %}
+<div class="container-narrow">
+    <section class="card">
+        <div class="header">
+            <div>
+                <h1>CIO Application</h1>
+                <p class="subtitle">Submit your application for admin review.</p>
+            </div>
+            <span class="badge">Member</span>
+        </div>
+
+        {% if cio_request and cio_request.status == 'pending' %}
+            <div class="empty" style="margin-bottom:0.85rem;">Your application is currently pending.</div>
+        {% elif cio_request and cio_request.status == 'rejected' %}
+            <div class="empty" style="margin-bottom:0.85rem;">Your last application was rejected. You can submit a new one below.</div>
+        {% elif cio_request and cio_request.status == 'approved' %}
+            <div class="empty" style="margin-bottom:0.85rem;">Your application was approved. You are now a CIO.</div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="field">
+                <label for="application_text">Application</label>
+                <textarea id="application_text" name="application_text" rows="6" placeholder="Tell the admins why you want CIO status.">{{ cio_request.application_text|default:'' }}</textarea>
+                <div class="hint">Share your reasons and what you plan to do as a CIO.</div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" type="submit">Submit Application</button>
+                <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Back to Member Dashboard</a>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

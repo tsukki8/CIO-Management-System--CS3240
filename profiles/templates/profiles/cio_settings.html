@@ -1,0 +1,77 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: CIO settings page
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build CIO settings for editing name/description/status and delete with confirmation"
+Notes: Status toggle (public/hidden), delete confirmation modal
+{% endcomment %}
+
+{% block title %}CIO Settings - Executive Dashboard{% endblock %}
+
+{% block content %}
+    <div class="container-narrow">
+        <section class="card">
+            <h1>CIO Settings</h1>
+            <p class="subtitle">Update your CIO name, description, status, and profile picture.</p>
+
+            {% if error %}
+                <div class="alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save">
+
+                <div class="field">
+                    <label for="name">CIO Name</label>
+                    <input id="name" name="name" type="text" maxlength="255" value="{{ cio.name|default:'' }}" required>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" placeholder="Describe your CIO mission, audience, and goals.">{{ cio.description|default:'' }}</textarea>
+                    </div>
+
+                    <div class="field">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="public" {% if cio and cio.status == 'public' %}selected{% endif %}>Public</option>
+                            <option value="hidden" {% if not cio or cio.status == 'hidden' %}selected{% endif %}>Hidden</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="image">Profile Picture</label>
+                    <input id="image" name="image_upload" type="file" accept="image/*">
+                    <div class="hint">
+                        <br>
+                        Current image: {% if cio.profile_picture %}<a href="{{ cio.profile_picture.url }}" target="_blank" style="color: var(--primary);">View</a>{% else %}<em>None set</em>{% endif %}
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="submit">Save Changes</button>
+                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}?cio={{ cio.id }}">Back to Executive Dashboard</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="card danger-zone">
+            <h2>Danger Zone</h2>
+            <p class="subtitle">Delete this CIO permanently. This cannot be undone.</p>
+
+            <form method="post" action="" onsubmit="return confirm('Delete this CIO permanently? This action cannot be undone.');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <div class="btn-row">
+                    <button class="btn btn-danger" type="submit" {% if not cio %}disabled{% endif %}>Delete CIO</button>
+                </div>
+            </form>
+
+            <div class="hint">Deleting will permanently remove this CIO from your PostgreSQL database.</div>
+        </section>
+    </div>
+{% endblock %}

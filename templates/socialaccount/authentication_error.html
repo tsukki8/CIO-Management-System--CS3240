@@ -1,0 +1,162 @@
+{% extends "profiles/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Third-Party Login Failure" %}{% endblock %}
+
+{% block content %}
+    <style>
+        .auth-shell {
+            width: min(980px, 100% - 2rem);
+            margin: 1.8rem auto;
+            min-height: min(620px, calc(100vh - 3.6rem));
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--auth-shell-border);
+            box-shadow: 0 14px 36px rgba(10, 34, 86, 0.14);
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            background: var(--auth-shell-bg);
+        }
+
+        .auth-left {
+            padding: 2.1rem 2.2rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            background: var(--auth-panel-bg);
+        }
+
+        .auth-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: #1e2a44;
+            font-weight: 700;
+            font-size: 1.32rem;
+            text-decoration: none;
+            margin-bottom: 3.3rem;
+        }
+
+        .auth-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--auth-logo-start) 0%, var(--auth-logo-end) 100%);
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+        }
+
+        .auth-kicker {
+            color: #5f6c86;
+            margin-bottom: 0.6rem;
+            font-size: 0.97rem;
+        }
+
+        .auth-title {
+            font-size: 2.05rem;
+            line-height: 1.08;
+            margin: 0;
+            color: #1c2539;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            margin: 0.9rem 0 1.2rem;
+            color: #5b6780;
+            max-width: 48ch;
+        }
+
+        .auth-actions {
+            margin-top: 0.6rem;
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .auth-btn {
+            display: inline-block;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 0.72rem 0.95rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            cursor: pointer;
+        }
+
+        .auth-btn-primary {
+            background: linear-gradient(135deg, var(--primary-start), var(--primary));
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .auth-btn-secondary {
+            background: #fff;
+            color: #27344f;
+            border-color: var(--primary-border-strong);
+        }
+
+        .auth-right {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(243, 170, 224, 0.7) 0, rgba(243, 170, 224, 0) 38%),
+                radial-gradient(circle at 78% 84%, rgba(246, 190, 235, 0.6) 0, rgba(246, 190, 235, 0) 42%),
+                var(--auth-hero-grad);
+        }
+
+        .auth-right::before,
+        .auth-right::after {
+            content: "";
+            position: absolute;
+            border-radius: 45% 55% 67% 33% / 41% 41% 59% 59%;
+            opacity: 0.78;
+        }
+
+        .auth-right::before {
+            width: 380px;
+            height: 380px;
+            top: -90px;
+            left: -75px;
+            background: rgba(204, 231, 255, 0.46);
+        }
+
+        .auth-right::after {
+            width: 420px;
+            height: 420px;
+            right: -135px;
+            bottom: -125px;
+            background: rgba(115, 157, 235, 0.5);
+        }
+
+        @media (max-width: 980px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-right {
+                min-height: 220px;
+            }
+        }
+    </style>
+
+    <div class="auth-shell">
+        <section class="auth-left">
+            <a class="auth-brand" href="{% url 'profiles:profile' %}">
+                <span class="auth-logo"></span>
+                CIO Hub
+            </a>
+
+            <p class="auth-kicker">Sign in issue</p>
+            <h1 class="auth-title">Third-party login failed</h1>
+            <p class="auth-subtitle">
+                {% trans "An error occurred while attempting to sign in via your Google account. Please try again, or use your CIO Hub email and password." %}
+            </p>
+
+            <div class="auth-actions">
+                <a class="auth-btn auth-btn-primary" href="{% url 'account_login' %}">{% trans "Back to Sign In" %}</a>
+                <a class="auth-btn auth-btn-secondary" href="{% url 'account_signup' %}">{% trans "Create an Account" %}</a>
+            </div>
+        </section>
+
+        <aside class="auth-right" aria-hidden="true"></aside>
+    </div>
+{% endblock %}

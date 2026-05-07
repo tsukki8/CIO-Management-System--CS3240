@@ -1,0 +1,78 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Member personal calendar with role-aware back navigation
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Fix calendar back button routing to be role-aware (CIO users go to exec dashboard, members go to member dashboard)"
+Notes: Added role conditional logic to route back to correct dashboard based on user's role.
+{% endcomment %}
+
+{% block title %}My Calendar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="card">
+        <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h1>My Calendar</h1>
+                <p class="subtitle">Track the events you've RSVP’d to.</p>
+            </div>
+            {% if dashboard_context == "exec" %}
+                <a class="btn btn-secondary" href="{% url 'profiles:exec' %}">Back to Dashboard</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Back to Dashboard</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="card">
+        {% if events %}
+            {% regroup events by calendar_day as grouped_events %}
+
+            {% for group in grouped_events %}
+                <div style="margin-bottom: 1.4rem;">
+                    <h2 style="margin-bottom: 0.85rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb;">
+                        {{ group.grouper|date:"l, M d, Y" }}
+                    </h2>
+
+                    <div style="display:grid; gap:0.9rem;">
+                        {% for event in group.list %}
+                            <div class="card" style="margin:0; border:1px solid #e5e7eb; box-shadow:none;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                                    <div>
+                                        <div class="badge" style="margin-bottom:0.5rem;">{{ event.cio.name }}</div>
+                                        <h3 style="margin-bottom:0.45rem;">{{ event.title }}</h3>
+                                        <div class="subtitle" style="margin:0 0 0.35rem;">{{ event.date|date:"g:i A" }}</div>
+
+                                        {% if event.description %}
+                                            <p class="subtitle" style="margin:0; max-width: 56rem;">
+                                                {{ event.description }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+
+                                    <a class="btn btn-primary" href="{% url 'profiles:event_detail' event.cio.id event.id %}?dashboard={{ dashboard_context }}&source=calendar">
+                                        View Event
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <h3 style="margin-bottom:8px;">No RSVP’d events yet</h3>
+                <p class="subtitle" style="margin-bottom:16px;">
+                    Once you RSVP to events, they’ll appear here in your calendar.
+                </p>
+                {% if dashboard_context == "exec" %}
+                    <a class="btn btn-primary" href="{% url 'profiles:exec' %}">Back to Executive Dashboard</a>
+                {% else %}
+                    <a class="btn btn-primary" href="{% url 'profiles:member' %}">Browse CIOs</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

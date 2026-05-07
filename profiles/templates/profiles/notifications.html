@@ -1,0 +1,67 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Notifications list with event reminder context
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Update notifications to show event reminder type context with event title when applicable"
+Notes: Added conditional rendering for event reminders vs messages; displays event.title and timestamp for all notification types.
+
+AI Citation
+Description: Unread notification feature
+AI Use: Assisted with ChatGPT on 2026-04-28 - modified with GitHub Copilot..
+   Prompt: "Help provide a starting point to add basic unread in-app notifications for new messages in Django."
+Notes: Added notifications for unread messages
+{% endcomment %}
+
+{% block content %}
+<div class="container-narrow">
+    <section class="card">
+        <div class="header">
+            <div>
+                <h1>Notifications</h1>
+                <p class="subtitle">Your recent message and event reminder notifications.</p>
+            </div>
+            <div class="btn-row" style="margin-top:0;">
+                {% if dashboard_context == "exec" %}
+                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}">Back to Dashboard</a>
+                {% else %}
+                    <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Back to Dashboard</a>
+                {% endif %}
+                {% if notifications %}
+                    <a class="btn btn-primary" href="{% url 'profiles:mark_all_notifications_read' %}?dashboard={{ dashboard_context }}">Mark All Read</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="card" style="margin-top: 1rem;">
+        {% if notifications %}
+            <div class="chat-list">
+                {% for notification in notifications %}
+                    <a class="chat-user-card" href="{% url 'profiles:open_notification' notification.id %}?dashboard={{ dashboard_context }}">
+                        <div>
+                            <div class="chat-user-name">
+                                {{ notification.text }}
+                                {% if not notification.is_read %}
+                                    <span class="chip chip-new" style="margin-left: 0.4rem;">New</span>
+                                {% endif %}
+                            </div>
+                            <div class="chat-user-meta">
+                                {% if notification.notification_type == "event_reminder" and notification.event %}
+                                    Event: {{ notification.event.title }}
+                                {% else %}
+                                    From {{ notification.sender.get_full_name|default:notification.sender.username }}
+                                {% endif %}
+                                • {{ notification.created_at|date:"M d, g:i A" }}
+                            </div>
+                        </div>
+                        <span class="chip">Open</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="chat-empty">No notifications yet.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

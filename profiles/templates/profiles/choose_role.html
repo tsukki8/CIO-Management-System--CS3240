@@ -1,0 +1,27 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Role selection page
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build role selection page for member or executive roles"
+Notes: Redirects to profile after selection
+{% endcomment %}
+
+{% block title %}Choose User Type{% endblock %}
+
+{% block content %}
+    <div class="container-narrow">
+        <section class="card">
+            <h1>Choose Your User Type</h1>
+            <p class="subtitle">Select how you want to use CIO Hub today.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="submit" name="role" value="member">Continue as Member</button>
+                    <button class="btn btn-secondary" type="submit" name="role" value="cio">Continue as Executive (CIO)</button>
+                </div>
+            </form>
+        </section>
+    </div>
+{% endblock %}

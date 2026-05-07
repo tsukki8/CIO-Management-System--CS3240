@@ -1,0 +1,262 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: Messages inbox page
+AI Use: Modified with GitHub Copilot and asked ChatGPT to provide a starting point of how to implement and integrate this page on 2026-04-13.
+        Prompt: "How would i go about creating the following feature in Django and python provide a starting point and some help please: Chat (DM) — Fulfills the in-app messaging deliverable."
+
+AI Citation
+Description: Messages inbox page
+AI Use: Modified with GitHub Copilot on 2026-04-13.
+        Prompt: "Can you remove the 'chat with' and just have the name of the person"
+
+AI Citation
+Description: Message timestamp localization and no-JavaScript scroll positioning
+AI Use: Modified with GitHub Copilot on 2026-04-16.
+    Prompt: "Show message timestamps in user's local timezone with timezone abbreviation, fix messaging visibility to only show users from shared CIO context, implement anchor-based scroll positioning after message send without JavaScript (use #chat-bottom fragment redirect)"
+    Notes: Added |localtime|date filter for timestamps with timezone abbreviation; Added chat-bottom anchor element inside message container for fragment navigation; Removed JavaScript-based async send in favor of anchor redirect approach. 
+Notes: Unified the chat layout, removed the chat-with label, and made dashboard navigation role-aware.
+{% endcomment %}
+
+{% load tz %}
+
+{% block title %}Messages{% endblock %}
+
+{% block head %}{% endblock %}
+{% block content %}
+<div class="container">
+    <section class="card">
+        <div class="header">
+            <div>
+                <h1>Messages</h1>
+                <p class="subtitle">Start new conversations or continue existing ones.</p>
+            </div>
+            <div class="btn-row" style="margin-top:0;">
+                <a class="btn btn-secondary" href="{% url 'profiles:profile' %}">Back to Profile</a>
+                {% if dashboard_context == "exec" %}
+                    <a class="btn btn-primary" href="{% url 'profiles:exec' %}">Back to CIO Dashboard</a>
+                {% else %}
+                    <a class="btn btn-primary" href="{% url 'profiles:member' %}">Back to Member Dashboard</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <div class="chat-shell" style="margin-top: 1rem;">
+        <aside class="card chat-panel">
+            <div>
+                <h2>Chats</h2>
+                <p class="subtitle">Recent conversations and new people to message.</p>
+            </div>
+
+            <div class="chat-list">
+                {% for item in conversation_summaries %}
+                    <a class="chat-user-card {% if selected_conversation_id == item.conversation.id %}selected{% endif %}" href="{% url 'profiles:inbox' %}?dashboard={{ dashboard_context }}&conversation={{ item.conversation.id }}">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            {% if item.other_user_avatar_url %}
+                                <img src="{{ item.other_user_avatar_url }}" alt="{{ item.other_user.get_full_name|default:item.other_user.username }}" class="avatar" style="width:44px; height:44px; border-radius:50%;">
+                            {% else %}
+                                <div class="avatar-placeholder" style="width:44px; height:44px; border-radius:50%; font-size:1.05rem;">👤</div>
+                            {% endif %}
+                            <div>
+                                <div class="chat-user-name">{{ item.other_user.get_full_name|default:item.other_user.username }}</div>
+                                {% if item.last_message %}
+                                    <div class="chat-user-meta">{{ item.last_message.content|truncatechars:40 }}</div>
+                                {% else %}
+                                    <div class="chat-user-meta">No messages yet.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if item.has_new_reply %}
+                            <span class="chip chip-new">New</span>
+                        {% endif %}
+                    </a>
+                {% empty %}
+                    <div class="chat-empty">No conversations yet.</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 0.8rem;">
+                <h3>Start a New Chat</h3>
+                <p class="subtitle">Choose someone to begin a conversation.</p>
+            </div>
+
+            {% if new_chat_users %}
+                <div class="chat-list">
+                    {% for item in new_chat_users %}
+                        <a class="chat-user-card" href="{% url 'profiles:start_chat' item.user.id %}?dashboard={{ dashboard_context }}">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                {% if item.avatar_url %}
+                                    <img src="{{ item.avatar_url }}" alt="{{ item.user.get_full_name|default:item.user.username }}" class="avatar" style="width:44px; height:44px; border-radius:50%;">
+                                {% else %}
+                                    <div class="avatar-placeholder" style="width:44px; height:44px; border-radius:50%; font-size:1.05rem;">👤</div>
+                                {% endif %}
+                                <div>
+                                    <div class="chat-user-name">{{ item.user.get_full_name|default:item.user.username }}</div>
+                                    <div class="chat-user-meta">@{{ item.user.username }}</div>
+                                </div>
+                            </div>
+                            <span class="chip">Message</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="chat-empty">No other users found in your CIOs.</div>
+            {% endif %}
+        </aside>
+
+        <section class="card chat-thread">
+            {% if selected_conversation and selected_other_user %}
+                <div class="cio-header-with-img" style="align-items:center; gap:0.75rem;">
+                    {% if selected_other_user_avatar_url %}
+                        <img src="{{ selected_other_user_avatar_url }}" alt="{{ selected_other_user.get_full_name|default:selected_other_user.username }}" class="avatar" style="border-radius: 50%; width: 44px; height: 44px;">
+                    {% else %}
+                        <div class="avatar-placeholder" style="border-radius: 50%; width: 44px; height: 44px; font-size: 1rem;">👤</div>
+                    {% endif %}
+                    <div class="cio-header-text" style="flex:1; min-width:0;">
+                        <h2 style="margin:0; font-size:1.1rem; font-weight:700; line-height:1.2;">{{ selected_other_user.get_full_name|default:selected_other_user.username }}</h2>
+                        {% if selected_other_user_relationship %}<span class="badge" style="font-size:0.72rem; margin-top:0.2rem; display:inline-block;">{{ selected_other_user_relationship }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="chat-messages" style="margin-top:0.9rem;">
+                    {% for message in selected_messages %}
+                        <div class="message-row {% if message.sender == request.user %}self{% endif %}">
+                            <div class="message-bubble">
+                                <div class="message-header">
+                                    <span class="message-author">
+                                        {% if message.sender == request.user %}
+                                            You
+                                        {% else %}
+                                            {{ message.sender.get_full_name|default:message.sender.username }}
+                                        {% endif %}
+                                    </span>
+                                    <span class="message-time">{{ message.timestamp|localtime|date:"M d, g:i A T" }}</span>
+                                </div>
+                                <div class="message-content">{{ message.content }}</div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="chat-empty">No messages yet. Send the first one below.</div>
+                    {% endfor %}
+                    <div id="chat-bottom"></div>
+                </div>
+
+                <form method="post" class="chat-compose" id="chat-compose">
+                    {% csrf_token %}
+                    <input type="hidden" name="conversation_id" value="{{ selected_conversation.id }}">
+                    <div class="field" style="margin-top:0;">
+                        <label for="content">New Message</label>
+                        <textarea id="content" name="content" rows="2" style="min-height:72px;" placeholder="Type your message..." required></textarea>
+                    </div>
+                    <div class="btn-row" style="margin-top:0; justify-content:flex-end;">
+                        <button class="btn btn-primary" type="submit">Send</button>
+                    </div>
+                </form>
+            {% elif selected_other_user %}
+                <div class="cio-header-with-img" style="align-items:center; gap:0.75rem;">
+                    {% if selected_other_user_avatar_url %}
+                        <img src="{{ selected_other_user_avatar_url }}" alt="{{ selected_other_user.get_full_name|default:selected_other_user.username }}" class="avatar" style="border-radius: 50%; width: 44px; height: 44px;">
+                    {% else %}
+                        <div class="avatar-placeholder" style="border-radius: 50%; width: 44px; height: 44px; font-size: 1rem;">👤</div>
+                    {% endif %}
+                    <div class="cio-header-text" style="flex:1; min-width:0;">
+                        <h2 style="margin:0; font-size:1.1rem; font-weight:700; line-height:1.2;">{{ selected_other_user.get_full_name|default:selected_other_user.username }}</h2>
+                        {% if selected_other_user_relationship %}<span class="badge" style="font-size:0.72rem; margin-top:0.2rem; display:inline-block;">{{ selected_other_user_relationship }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="chat-messages" style="margin-top:0.9rem; flex:1;">
+                    <div class="chat-empty">No messages yet. Send the first one below.</div>
+                    <div id="chat-bottom"></div>
+                </div>
+
+                <form method="post" class="chat-compose" id="chat-compose">
+                    {% csrf_token %}
+                    <input type="hidden" name="new_user_id" value="{{ selected_other_user.id }}">
+                    <div class="field" style="margin-top:0;">
+                        <label for="content">New Message</label>
+                        <textarea id="content" name="content" rows="2" style="min-height:64px;" placeholder="Type your message..." required></textarea>
+                    </div>
+                    <div class="btn-row" style="margin-top:0; justify-content:flex-end;">
+                        <button class="btn btn-primary" type="submit">Send</button>
+                    </div>
+                </form>
+            {% else %}
+                <div class="chat-empty" style="min-height: 520px; display:flex; align-items:center; justify-content:center; text-align:center;">
+                    <div>
+                        <h2 style="margin-bottom:0.5rem;">Select a conversation</h2>
+                        <p class="subtitle">Open a thread from the left or start a new chat.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<!--
+Source / AI Citation
+Description: Messaging auto-refresh and partial chat update behavior
+Source: Generated with Claude based on analysis of the existing messaging template and frontend behavior.
+AI Use: Generated with Claude during development.
+  Prompt 1: "Analyze the messaging system we have now. Explain how it works, what files control it, and what limitations it has. Do not change code."
+  Prompt 2: "I implemented a refresh every 3 seconds, but that broke the site by refreshing too fast and kicking me out of the messaging box. How do you think I should handle it?"
+  Prompt 3: "Write a skeleton to implement that fix so it stops kicking me out while typing and does not lose unsent messages."
+Notes: I identified the lack of live message updates, tried my own refresh-based fix, and found that it interrupted typing and could lose unsent messages. I used Claude to analyze why that approach failed and think through a safer solution with me, then wrote the final solution based on Claude's suggested skeleton.
+-->
+<script>
+(function () {
+    'use strict';
+
+    var POLL_MS        = 5000;   
+    var NEAR_BOTTOM_PX = 120;    
+
+    var compose = document.getElementById('content');
+    var msgBox  = document.querySelector('.chat-messages');
+
+    /* ── scroll to bottom on initial load ── */
+    var anchor = document.getElementById('chat-bottom');
+    if (anchor) anchor.scrollIntoView();
+
+   
+    if (!msgBox) return;
+
+    function nearBottom() {
+        return (msgBox.scrollHeight - msgBox.scrollTop - msgBox.clientHeight) < NEAR_BOTTOM_PX;
+    }
+
+   
+    function userIsActive() {
+        if (!compose) return false;
+        return document.activeElement === compose || compose.value.trim() !== '';
+    }
+
+    function poll() {
+        if (userIsActive()) return;
+
+        var wasNearBottom = nearBottom();
+
+        fetch(window.location.href, { credentials: 'same-origin' })
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                var doc   = new DOMParser().parseFromString(html, 'text/html');
+                var fresh = doc.querySelector('.chat-messages');
+
+          
+                if (!fresh || fresh.innerHTML === msgBox.innerHTML) return;
+
+                msgBox.innerHTML = fresh.innerHTML;
+
+               
+                if (wasNearBottom) {
+                    var bottom = document.getElementById('chat-bottom');
+                    if (bottom) bottom.scrollIntoView({ behavior: 'smooth' });
+                }
+            })
+            .catch(function () { /* silent — never disrupt the user on error */ });
+    }
+
+    setInterval(poll, POLL_MS);
+}());
+</script>
+{% endblock %}

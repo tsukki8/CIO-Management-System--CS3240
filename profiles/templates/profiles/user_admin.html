@@ -1,0 +1,172 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: CIO application submission page
+AI Use: Modified with GitHub Copilot on 2026-04-13.
+  Prompt: "remove the apply to become CIO from the member dashboard" and "can i open up an application and then fully read it?"
+Notes: Added a dedicated CIO application flow with pending/rejected/approved status messaging.
+{% endcomment %}
+
+{% block title %}User Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+  <style>
+    .role-update-form {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin: 0;
+    }
+
+    .role-update-form select {
+      flex: 0 0 180px;
+      max-width: 180px;
+      font: inherit;
+      font-size: 0.9rem;
+      line-height: 1.25;
+    }
+
+    .role-update-form .btn {
+      margin-left: auto;
+      min-width: 104px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.15;
+    }
+
+    .cio-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(88px, 1fr));
+      gap: 0.45rem;
+      max-width: 220px;
+      margin-left: auto;
+    }
+
+    .cio-actions form {
+      margin: 0;
+    }
+
+    .cio-actions .full-row {
+      grid-column: 1 / -1;
+    }
+
+    .cio-actions .btn {
+      width: 100%;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.15;
+      text-align: center;
+      padding: 0.52rem 0.75rem;
+    }
+  </style>
+
+  <section class="card">
+    <div class="header">
+      <div>
+        <h1>User Administration</h1>
+        <p class="subtitle">Manage role assignments for non-administrator users.</p>
+      </div>
+      <span class="badge">User Administrator</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Current Role</th>
+            <th style="width: 34%;">Change Role & Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.email|default:"-" }}</td>
+              <td>{{ user.profile.get_role_display|default:user.profile.role }}</td>
+              <td style="width: 34%;">
+                {% if user.profile.role == 'admin' %}
+                  <span class="hint">Locked (administrator)</span>
+                {% else %}
+                  <form method="POST" class="role-update-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <select name="role">
+                      <option value="member" {% if user.profile.role == 'member' %}selected{% endif %}>Member</option>
+                      <option value="cio" {% if user.profile.role == 'cio' %}selected{% endif %}>CIO</option>
+                    </select>
+                    <button class="btn btn-primary" type="submit">Update</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <section class="card" style="margin-top:1rem;">
+      <h3>CIO Requests</h3>
+      <p class="subtitle">Members asking to be promoted to CIO.</p>
+
+      {% if cio_requests %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Requested</th>
+                <th>Application</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cio_request in cio_requests %}
+                <tr>
+                  <td>{{ cio_request.user.get_full_name|default:cio_request.user.username }}</td>
+                  <td>{{ cio_request.user.email|default:"-" }}</td>
+                  <td>{{ cio_request.created_at|date:"M d, Y" }}</td>
+                  <td>{{ cio_request.application_text|default:"-"|truncatechars:90 }}</td>
+                  <td>
+                    <div class="cio-actions">
+                      <a class="btn btn-secondary" href="{% url 'profiles:cio_request_detail' cio_request.id %}">View</a>
+                      <form method="post" action="{% url 'profiles:approve_cio_request' cio_request.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary" type="submit">Approve</button>
+                      </form>
+                      <form method="post" action="{% url 'profiles:reject_cio_request' cio_request.id %}" class="full-row">
+                        {% csrf_token %}
+                        <button class="btn btn-danger" type="submit">Reject</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">No pending CIO requests right now.</div>
+      {% endif %}
+    </section>
+
+    <div class="btn-row">
+      <a class="btn btn-danger" href="{% url 'profiles:logout' %}?next={{ request.get_full_path|urlencode }}">Log Out</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

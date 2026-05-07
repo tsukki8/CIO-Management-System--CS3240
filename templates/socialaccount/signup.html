@@ -1,0 +1,218 @@
+{% extends "profiles/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Sign Up" %}{% endblock %}
+
+{% block content %}
+    <style>
+        .auth-shell {
+            width: min(980px, 100% - 2rem);
+            margin: 1.8rem auto;
+            min-height: min(760px, calc(100vh - 3.6rem));
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--auth-shell-border);
+            box-shadow: 0 14px 36px rgba(10, 34, 86, 0.14);
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            background: var(--auth-shell-bg);
+        }
+
+        .auth-left {
+            padding: 2.1rem 2.2rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            background: var(--auth-panel-bg);
+        }
+
+        .auth-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: #1e2a44;
+            font-weight: 700;
+            font-size: 1.32rem;
+            text-decoration: none;
+            margin-bottom: 3.3rem;
+        }
+
+        .auth-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--auth-logo-start) 0%, var(--auth-logo-end) 100%);
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+        }
+
+        .auth-kicker {
+            color: #5f6c86;
+            margin-bottom: 0.6rem;
+            font-size: 0.97rem;
+        }
+
+        .auth-title {
+            font-size: 2.05rem;
+            line-height: 1.08;
+            margin: 0;
+            color: #1c2539;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            margin: 0.9rem 0 1.3rem;
+            color: #5b6780;
+        }
+
+        .auth-field {
+            margin-bottom: 0.92rem;
+        }
+
+        .auth-field label {
+            display: block;
+            margin-bottom: 0.36rem;
+            color: #32425f;
+            font-size: 0.86rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .auth-field input[type="text"],
+        .auth-field input[type="email"] {
+            width: 100%;
+            border: 1px solid var(--primary-border);
+            border-radius: 10px;
+            padding: 0.76rem 0.82rem;
+            font: inherit;
+            background: #fff;
+        }
+
+        .auth-field input:focus {
+            outline: none;
+            border-color: var(--auth-focus-border);
+            box-shadow: 0 0 0 3px var(--primary-soft);
+        }
+
+        .auth-link {
+            color: var(--primary-strong);
+            font-size: 0.89rem;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-link:hover {
+            text-decoration: underline;
+        }
+
+        .auth-submit {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary-start), var(--primary));
+            color: #fff;
+            font-weight: 700;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            margin-top: 0.2rem;
+        }
+
+        .auth-footer {
+            margin-top: auto;
+            color: #60708d;
+            font-size: 0.92rem;
+        }
+
+        .field-error {
+            color: #9b1c1c;
+            font-size: 0.82rem;
+            margin-top: 0.25rem;
+        }
+
+        .auth-right {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(243, 170, 224, 0.7) 0, rgba(243, 170, 224, 0) 38%),
+                radial-gradient(circle at 78% 84%, rgba(246, 190, 235, 0.6) 0, rgba(246, 190, 235, 0) 42%),
+                var(--auth-hero-grad);
+        }
+
+        .auth-right::before,
+        .auth-right::after {
+            content: "";
+            position: absolute;
+            border-radius: 45% 55% 67% 33% / 41% 41% 59% 59%;
+            opacity: 0.78;
+        }
+
+        .auth-right::before {
+            width: 380px;
+            height: 380px;
+            top: -90px;
+            left: -75px;
+            background: rgba(204, 231, 255, 0.46);
+        }
+
+        .auth-right::after {
+            width: 420px;
+            height: 420px;
+            right: -135px;
+            bottom: -125px;
+            background: rgba(115, 157, 235, 0.5);
+        }
+
+        @media (max-width: 980px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-right {
+                min-height: 220px;
+            }
+        }
+    </style>
+
+    <div class="auth-shell">
+        <section class="auth-left">
+            <a class="auth-brand" href="{% url 'profiles:profile' %}">
+                <span class="auth-logo"></span>
+                CIO Hub
+            </a>
+
+            <p class="auth-kicker">Complete Google sign up</p>
+            <h1 class="auth-title">Finish creating your account</h1>
+            <p class="auth-subtitle">
+                {% blocktrans with provider_name=account.get_provider.name site_name=site.name %}
+                    You are about to use your {{ provider_name }} account to log in to {{ site_name }}. As a final step, complete the form below.
+                {% endblocktrans %}
+            </p>
+
+            {% if form.non_field_errors %}
+                <div class="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            {% url 'socialaccount_signup' as action_url %}
+            <form method="post" action="{{ action_url }}">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="auth-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div class="field-error">{{ field.errors|striptags }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+
+                {{ redirect_field }}
+
+                <button class="auth-submit" type="submit">{% trans "Sign Up" %}</button>
+            </form>
+
+            <p class="auth-footer">
+                Already have an account?
+                <a class="auth-link" href="{% url 'account_login' %}">Sign in</a>
+            </p>
+        </section>
+
+        <aside class="auth-right" aria-hidden="true"></aside>
+    </div>
+{% endblock %}

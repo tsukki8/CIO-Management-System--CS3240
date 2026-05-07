@@ -1,0 +1,65 @@
+{% extends "profiles/base.html" %}
+
+{% block title %}Create Event - {{ cio.name }}{% endblock %}
+
+{% block content %}
+    <div class="container-narrow">
+        <section class="card">
+            <h1>Create Event</h1>
+            <p class="subtitle">Add an event for <strong>{{ cio.name }}</strong>.</p>
+
+            {% if error %}
+                <div class="alert">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="title">Event Title</label>
+                    <input
+                        id="title"
+                        name="title"
+                        type="text"
+                        maxlength="255"
+                        value="{{ request.POST.title|default:'' }}"
+                        placeholder="e.g., Spring Kickoff Meeting"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="host">Host</label>
+                    <input id="host" name="host" type="text" value="{{ cio.name }}" readonly>
+                </div>
+
+                <div class="field">
+                    <label for="description">Description</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Agenda, venue, attendance details, or notes..."
+                    >{{ request.POST.description|default:'' }}</textarea>
+                </div>
+
+                <div class="field">
+                    <label for="date">Event Date and Time</label>
+                    <input
+                        id="date"
+                        name="date"
+                        type="datetime-local"
+                        value="{{ request.POST.date|default:'' }}"
+                        min="{{ min_date_input }}"
+                        required
+                    >
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="submit">Create Event</button>
+                    <a class="btn btn-secondary" href="{% url 'profiles:cio_detail' cio.id %}">Cancel</a>
+                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}?cio={{ cio.id }}">Back to Executive Dashboard</a>
+                </div>
+            </form>
+        </section>
+    </div>
+{% endblock %}

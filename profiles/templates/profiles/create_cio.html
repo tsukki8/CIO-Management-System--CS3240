@@ -1,0 +1,40 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: CIO creation form
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build CIO creation form with name and description fields"
+Notes: Inherits base template styling
+{% endcomment %}
+
+{% block title %}Create CIO - Executive Dashboard{% endblock %}
+
+{% block content %}
+    <div class="container-narrow">
+        <section class="card">
+            <h1>Create a New CIO</h1>
+            <p class="subtitle">Set up a new student organization to manage members, events, and communications.</p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="name">CIO Name</label>
+                    <input id="name" name="name" type="text" maxlength="255" placeholder="e.g., Tech Club, Debate Society" required>
+                    <div class="hint">The name of your student organization.</div>
+                </div>
+
+                <div class="field">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" placeholder="Describe your CIO mission, audience, activities, and goals..."></textarea>
+                    <div class="hint">Optional. Helps members understand what your CIO is about.</div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="submit">Create CIO</button>
+                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </div>
+{% endblock %}

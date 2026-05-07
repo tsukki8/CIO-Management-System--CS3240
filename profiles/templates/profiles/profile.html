@@ -1,0 +1,94 @@
+{% extends "profiles/base.html" %}
+{% comment %}
+AI Citation
+Description: User profile page
+AI Use: Generated with GitHub Copilot on 2026-03-29.
+    Prompt: "Build profile page with Google photo fallback and custom image upload"
+Notes: Custom image URL upload, Google OAuth fallback, role selection
+{% endcomment %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+    <div class="container-narrow">
+        <section class="card">
+            <div class="header">
+                <div>
+                    <h1>My Profile</h1>
+                    <p class="subtitle">Manage your account details and profile picture.</p>
+                </div>
+                <span class="badge">{{ profile.get_role_display|default:"Role not selected" }}</span>
+            </div>
+
+            {% if updated %}
+                <div class="alert" style="border-color:#b6e4c8;background:#ecfaf1;color:#166534;">Profile image settings updated.</div>
+            {% endif %}
+
+            <div class="cio-header-with-img" style="margin-top: 0.5rem;">
+                {% if profile_picture_url %}
+                    <img src="{{ profile_picture_url }}" alt="{{ user.get_full_name|default:user.username }}" class="avatar" style="border-radius: 50%; width: 96px; height: 96px;">
+                {% else %}
+                    <div class="avatar-placeholder" style="border-radius: 50%; width: 96px; height: 96px;">👤</div>
+                {% endif %}
+
+                <div class="cio-header-text">
+                    <h2>{{ user.get_full_name|default:user.username }}</h2>
+                    <p class="subtitle">{{ user.email|default:"No email on file" }}</p>
+                </div>
+            </div>
+
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Username</div>
+                    <div class="meta-value">{{ user.username }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">User Type</div>
+                    <div class="meta-value">{{ profile.get_role_display|default:"Not selected" }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Date Joined</div>
+                    <div class="meta-value">{{ user.date_joined|date:"M d, Y" }}</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Profile Picture Framework</h3>
+            <p class="subtitle">Your Google profile picture is used by default. You can upload your own profile picture instead.</p>
+
+                <form method="post" enctype="multipart/form-data" action="">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label for="image_upload">Profile Image Upload</label>
+                        <input id="image_upload" name="image_upload" type="file" accept="image/*">
+                        <div class="hint">Upload an image from your computer.</div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" type="submit" name="action" value="upload_profile_picture">Upload Photo</button>
+                        {% if has_custom_profile_image and google_picture_url %}
+                            <button class="btn btn-secondary" type="submit" name="action" value="use_google_image">Use Google Profile Photo Instead</button>
+                        {% endif %}
+                    </div>
+                </form>
+        </section>
+
+        <section class="card">
+            <h3>Quick Navigation</h3>
+            <div class="btn-row" style="align-items: center;">
+
+                {% if profile.role == "member" %}
+                    <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Go to Member Dashboard</a>
+                    <a class="btn btn-secondary" href="{% url 'profiles:request_cio_role' %}">Apply to Become a CIO</a>
+                {% endif %}
+
+                {% if profile.role == "cio" %}
+                    <a class="btn btn-secondary" href="{% url 'profiles:exec' %}">Go to Executive Dashboard</a>
+                    <a class="btn btn-secondary" href="{% url 'profiles:member' %}">Browse and Join CIOs</a>
+                {% endif %}
+
+                <a class="btn btn-danger" href="{% url 'profiles:logout' %}?next={{ request.get_full_path|urlencode }}">Log Out</a>
+            </div>
+        </section>
+    </div>
+{% endblock %}

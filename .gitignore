@@ -1,0 +1,10 @@
+.env
+myproject/__pycache__
+profiles/__pycache__
+__pycache__/
+*.pyc
+*.pyo
+.env
+db.sqlite3
+venv/
+Spring 2026 Team Project Information_ CS 3240_ Software Engineering - S26.pdf
