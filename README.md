@@ -4,6 +4,7 @@
 
 ## CS 3240: Software Engineering S26 Group-05
 **Spring 2026 | University of Virginia**
+**Scrum Team Role: Requirements Lead**
 
 ---
 
